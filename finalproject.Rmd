@@ -1,0 +1,89 @@
+---
+title: "Final Project"
+author: "Jorge Mejia"
+date: "Sunday, April 19, 2015"
+output: pdf_document
+---
+
+
+```{r, echo=FALSE}
+library(TSA)
+library(car)
+library(lmtest)
+library(forecast)
+
+#Finding a Model
+
+beer <- ts(read.csv('beerdata7090.csv'), frequency=12, start=c(1970,1))
+boxplot(split(beer, cycle(beer)), names=c('J','F','M','A','M','J','J','A','S','O','N','D'))
+plot(beer)
+points(y=beer, x=time(beer), pch=as.vector(season(beer)))
+acf(as.vector(beer))
+pacf(as.vector(beer))
+
+
+#1st Difference
+
+beer.diff <- diff(beer)
+plot(beer.diff)
+points(y=beer.diff, x=time(beer.diff), pch=as.vector(season(beer.diff)))
+acf(as.vector(beer.diff))
+pacf(as.vector(beer.diff))
+
+#Seasonal (12) Difference
+
+beer.se.diff <- diff(beer.diff, lag=12)
+plot(beer.se.diff)
+points(y=beer.se.diff, x=time(beer.se.diff), pch=as.vector(season(beer.se.diff)))
+acf(as.vector(beer.se.diff))
+pacf(as.vector(beer.se.diff))
+
+#Seasonal (4) Difference
+
+beer.f.diff <- diff(beer.f.diff, lag=4)
+points(y=beer.f.diff, x=time(beer.f.diff), pch=as.vector(season(beer.f.diff)))
+acf(beer.f.diff)
+pacf(as.vector(beer.f.diff))
+
+#Estimates (Maximum Likelihood)
+
+auto.arima(beer, d=1, D=1, seasonal=TRUE, approximation=FALSE)
+arimabeer <- arima(beer, order=c(2,1,2), seasonal=list(order=c(2,1,0), period=12))
+arimabeer
+plot(armasubsets(beer, nar=12, nma=12))
+
+#Model Diagnostics
+
+
+tsdiag(arimabeer)
+qqPlot(rstandard(arimabeer))
+acf(as.vector(rstandard(arimabeer)))
+LB.test(as.vector(arimabeer), lag=24)
+hist(rstandard(arimabeer))
+shapiro.test(rstandard(arimabeer))
+runs(rstandard(arimabeer))
+
+
+#Forecasting
+
+beerfull <- read.csv('beerdata.csv')
+beer.act <- ts(beerfull[240:288, 1], frequency=12, start=c(1989,12))
+
+
+
+beer.pred <- predict(arimabeer, n.ahead = 48)
+plot(beer.act, ylim=c(90, 260), lwd=2)
+lines(beer.pred$pred, lwd=2, col = 'red')
+lines(beer.pred$pred+1.96*beer.pred$se, lty=2, lwd=2, col=4)
+lines(beer.pred$pred-1.96*beer.pred$se, lty=2, lwd=2, col=4)
+
+```
+
+
+
+
+
+
+
+
+
